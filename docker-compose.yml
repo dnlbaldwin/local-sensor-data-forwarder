@@ -1,0 +1,43 @@
+version: '3'
+services:
+  dump1090:
+    image: "jraviles/dump1090:latest"
+    devices:
+      - "/dev/bus/usb:/dev/bus/usb"
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      adsb:
+        aliases:
+          - dump1090
+  adsbcot:
+    image: "adsbcot:latest"
+    build: "./adsbcot"
+    expose:
+      - 8080
+      - 8089
+    ports: 
+      - "8089:8089"
+    restart: always
+    volumes:
+      - type: bind
+        source: ./adsbcot/certs/
+        target: /app/
+    environment:
+      - COT_URL=tls://gm300.ca:8089
+      - DUMP1090_URL=http://dump1090:8080/data/aircraft.json
+      - POLL_INTERVAL=1
+      - PYTAK_TLS_CLIENT_CERT=/app/guest01.pem
+      - PYTAK_TLS_CLIENT_KEY=/app/guest01.key
+      - PYTAK_TLS_CLIENT_CAFILE=/app/takserver.pem
+      # Hack because of self-signed cert in CA file
+      - PYTAK_TLS_DONT_VERIFY=true
+    networks:
+      adsb:
+        aliases:
+          - adsbcot
+networks:
+  adsb:
