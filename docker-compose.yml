@@ -18,8 +18,10 @@ services:
     build: "./adsbcot"
     expose:
       - 8080
+      # This should match the CoT server port
       - 8089
     ports: 
+      # This should match the CoT server port
       - "8089:8089"
     restart: always
     volumes:
@@ -31,13 +33,22 @@ services:
       - COT_URL=<tls or tcp>://<hostname for CoT server>:<Secure CoT server port number>
       - DUMP1090_URL=http://dump1090:8080/data/aircraft.json
       # Poll rate for dump1090, in seconds
-      - POLL_INTERVAL=1
+      - POLL_INTERVAL=5
       # Not required if using TCP connectivity
-      - PYTAK_TLS_CLIENT_CERT=/app/<guest certificate>.pem
-      - PYTAK_TLS_CLIENT_KEY=/app/<guest certificate key>.key
-      - PYTAK_TLS_CLIENT_CAFILE=/app/<server CA truststore>.pem
-      # Hack because of self-signed cert in CA file
-      - PYTAK_TLS_DONT_VERIFY=true
+      # Note: Certificates and Keys *CANNOT* be stored in .p12 format -- they have
+      # to be converted to cleartext .pem and .key files
+      - PYTAK_TLS_CLIENT_CERT=/app/<client cert>.pem
+      - PYTAK_TLS_CLIENT_KEY=/app/<client cert>.key
+      - PYTAK_TLS_CLIENT_CAFILE=/app/<certificate authority trust store>.pem
+      # Uncomment if you don't want to have TLS check for self-signed certs in the certificate chain
+      # This will be required if you are using the certificate generators in TAK servers
+      - PYTAK_TLS_DONT_VERIFY=True
+      # Uncomment if you don't want to have TLS check the host name
+      #- PYTAK_TLS_DONT_CHECK_HOSTNAME=True
+      # Uncomment if you want compatibility with FTS (and its DoS guard)
+      #- FTS_COMPAT=True
+      # Uncomment if you want debugging messages
+      #- DEBUG=True
     networks:
       adsb:
         aliases:
